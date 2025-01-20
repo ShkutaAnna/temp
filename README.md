@@ -1,5 +1,6 @@
 # temp
 
+```javascript
 @ViewChild('container') containerRef!: ElementRef;
   @ViewChild('image') imageRef!: ElementRef;
 
