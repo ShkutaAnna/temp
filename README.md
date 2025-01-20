@@ -39,25 +39,26 @@
 
   onMouseMove(event: MouseEvent): void {
     if (!this.isDragging) return;
-  
+
     const container = this.containerRef.nativeElement as HTMLElement;
     const image = this.imageRef.nativeElement as HTMLElement;
-  
+
     const rect = container.getBoundingClientRect();
     const imgRect = image.getBoundingClientRect();
-  
+
+    // Calculate new translation values based on cursor movement
     const newTranslateX = event.clientX - this.startX;
     const newTranslateY = event.clientY - this.startY;
-  
-    // Calculate max translation values (prevent image from going outside the container)
+
+    // Calculate the maximum amount the image can move within the container
     const maxTranslateX = ((imgRect.width * this.scale) - rect.width) / 2;
     const maxTranslateY = ((imgRect.height * this.scale) - rect.height) / 2;
-  
-    // Clamp translations to prevent dragging beyond the container
+
+    // Clamp translations to ensure the image does not move outside the container
     this.translateX = Math.min(Math.max(newTranslateX, -maxTranslateX), maxTranslateX);
     this.translateY = Math.min(Math.max(newTranslateY, -maxTranslateY), maxTranslateY);
-  
-    // Update the image position with boundary checks applied
+
+    // Apply the transform with the new translation values
     image.style.transform = `scale(${this.scale}) translate(${this.translateX}px, ${this.translateY}px)`;
   }
 
