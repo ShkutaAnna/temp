@@ -20,27 +20,15 @@ export class MyComponent implements AfterViewInit {
     });
   }
 
-  trackImagePosition(box: HTMLElement, image: HTMLElement) {
-    const boxRect = box.getBoundingClientRect();
-    const imageRect = image.getBoundingClientRect();
+  onWheel(box: HTMLElement, image: HTMLElement) {
+     onWheel(event: WheelEvent) {
+    event.preventDefault();
+    const scaleStep = 0.1;
+    const maxScale = 3;
+    const minScale = 1;
 
-    let offsetX = 0;
-    let offsetY = 0;
-
-    // Check if the image is out of bounds
-    if (imageRect.left < boxRect.left) {
-      offsetX = boxRect.left - imageRect.left;
-    } else if (imageRect.right > boxRect.right) {
-      offsetX = boxRect.right - imageRect.right;
-    }
-
-    if (imageRect.top < boxRect.top) {
-      offsetY = boxRect.top - imageRect.top;
-    } else if (imageRect.bottom > boxRect.bottom) {
-      offsetY = boxRect.bottom - imageRect.bottom;
-    }
-
-    // Apply offset to the box
-    this.renderer.setStyle(box, 'transform', `translate(${offsetX}px, ${offsetY}px)`);
+    this.scale += event.deltaY < 0 ? scaleStep : -scaleStep;
+    this.scale = Math.min(maxScale, Math.max(minScale, this.scale));
+  }
   }
 }
