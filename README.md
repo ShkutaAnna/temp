@@ -1,6 +1,18 @@
 # temp
 
 ```javascript
+dataSource = new MatTableDataSource<any>();  // The combined data source
+
+  constructor(private store: Store) {}
+
+  ngOnInit(): void {
+    // Combine both data sources
+    combineLatest([this.store.select(selectItems1), this.store.select(selectItems2)]).subscribe(([data1, data2]) => {
+      // Combine the two arrays
+      this.dataSource.data = [...data1, ...data2];
+    });
+  }
+
 import { createAction, props } from '@ngrx/store';
 
 export const addItem = createAction(
