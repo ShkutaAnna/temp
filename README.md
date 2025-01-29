@@ -13,6 +13,63 @@ dataSource = new MatTableDataSource<any>();  // The combined data source
     });
   }
 
+import { Component, OnInit } from '@angular/core';
+import { BehaviorSubject, combineLatest } from 'rxjs';
+import { MatTableDataSource } from '@angular/material/table';
+
+@Component({
+  selector: 'app-item-table',
+  templateUrl: './item-table.component.html',
+  styleUrls: ['./item-table.component.css']
+})
+export class ItemTableComponent implements OnInit {
+  displayedColumns: string[] = ['id', 'name', 'description'];
+  
+  // Define two separate data sources
+  private dataSource1$ = new BehaviorSubject<any[]>([
+    { id: 1, name: 'Item 1', description: 'Description 1' },
+    { id: 2, name: 'Item 2', description: 'Description 2' },
+  ]);
+  
+  private dataSource2$ = new BehaviorSubject<any[]>([
+    { id: 3, name: 'Item 3', description: 'Description 3' },
+    { id: 4, name: 'Item 4', description: 'Description 4' },
+  ]);
+
+  // Combined data source for the mat-table
+  dataSource = new MatTableDataSource<any>();
+
+  constructor() {}
+
+  ngOnInit(): void {
+    // Combine the two data sources using combineLatest
+    combineLatest([this.dataSource1$, this.dataSource2$]).subscribe(([data1, data2]) => {
+      // Merge both arrays into a single array
+      const combinedData = [...data1, ...data2];
+      // Update the MatTableDataSource with the combined data
+      this.dataSource.data = combinedData;
+    });
+  }
+
+  // Example method to update dataSource1
+  updateDataSource1(): void {
+    const updatedData1 = [
+      ...this.dataSource1$.value,
+      { id: 5, name: 'Item 5', description: 'Description 5' },
+    ];
+    this.dataSource1$.next(updatedData1); // Update dataSource1
+  }
+
+  // Example method to update dataSource2
+  updateDataSource2(): void {
+    const updatedData2 = [
+      ...this.dataSource2$.value,
+      { id: 6, name: 'Item 6', description: 'Description 6' },
+    ];
+    this.dataSource2$.next(updatedData2); // Update dataSource2
+  }
+}
+
 import { createAction, props } from '@ngrx/store';
 
 export const addItem = createAction(
