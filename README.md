@@ -1,88 +1,126 @@
 # temp
 
 ```javascript
-import { Component, ElementRef, ViewChild, HostListener } from '@angular/core';
+import { createAction, props } from '@ngrx/store';
 
-@Component({
-  selector: 'app-image-zoom',
-  templateUrl: './image-zoom.component.html',
-  styleUrls: ['./image-zoom.component.scss'],
-})
-export class ImageZoomComponent {
-  @ViewChild('container', { static: true }) container!: ElementRef;
-  @ViewChild('image', { static: true }) image!: ElementRef;
+export const addItem = createAction(
+  '[Item] Add Item',
+  props<{ item: any }>()
+);
 
-  scale: number = 1; // Current zoom scale
-  translateX: number = 0; // X position of the image
-  translateY: number = 0; // Y position of the image
-  isDragging: boolean = false; // Drag state
-  lastMouseX: number = 0;
-  lastMouseY: number = 0;
+export const addItemSuccess = createAction(
+  '[Item] Add Item Success',
+  props<{ item: any }>()
+);
 
-  onWheel(event: WheelEvent) {
-    event.preventDefault();
-    const scaleStep = 0.1;
-    const maxScale = 3;
-    const minScale = 1;
+export const addItemFailure = createAction(
+  '[Item] Add Item Failure',
+  props<{ error: any }>()
+);
 
-    this.scale += event.deltaY < 0 ? scaleStep : -scaleStep;
-    this.scale = Math.min(maxScale, Math.max(minScale, this.scale));
-  }
+export const loadItems = createAction('[Item] Load Items');
 
-  onMouseDown(event: MouseEvent) {
-    event.preventDefault();
-    this.isDragging = true;
-    this.lastMouseX = event.clientX;
-    this.lastMouseY = event.clientY;
-  }
+export const loadItemsSuccess = createAction(
+  '[Item] Load Items Success',
+  props<{ items: any[] }>()
+);
 
-  onMouseUp() {
-    this.isDragging = false;
-  }
+export const loadItemsFailure = createAction(
+  '[Item] Load Items Failure',
+  props<{ error: any }>()
+);
 
-  onMouseMove(event: MouseEvent) {
-    if (!this.isDragging) return;
 
-    const deltaX = event.clientX - this.lastMouseX;
-    const deltaY = event.clientY - this.lastMouseY;
+import { Injectable } from '@angular/core';
+import { Actions, ofType } from '@ngrx/effects';
+import { Observable } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
+import { Store } from '@ngrx/store';
 
-    const containerRect = this.container.nativeElement.getBoundingClientRect();
-    const imageRect = this.image.nativeElement.getBoundingClientRect();
+import { ItemService } from 'path-to-your-item-service'; // Import your API service
+import { addItem, addItemSuccess, addItemFailure, loadItems, loadItemsSuccess, loadItemsFailure } from './item.actions';
 
-    // Calculate new positions
-    const newTranslateX = this.translateX + deltaX;
-    const newTranslateY = this.translateY + deltaY;
+@Injectable()
+export class ItemEffects {
 
-    // Ensure the image stays within the container boundaries
-    const minX = Math.min(0, containerRect.width - imageRect.width);
-    const minY = Math.min(0, containerRect.height - imageRect.height);
-    const maxX = 0;
-    const maxY = 0;
+  constructor(
+    private actions$: Actions,
+    private itemService: ItemService,
+    private store: Store
+  ) {}
 
-    this.translateX = Math.max(minX, Math.min(maxX, newTranslateX));
-    this.translateY = Math.max(minY, Math.min(maxY, newTranslateY));
+  // Effect to handle add item
+  addItem$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(addItem),
+      switchMap(action =>
+        this.itemService.addItem(action.item).pipe(
+          map(item => {
+            // Dispatch success and load items after successful add
+            this.store.dispatch(loadItems()); // Dispatch loadItems action to reload the data
+            return addItemSuccess({ item });
+          }),
+          catchError(error => [addItemFailure({ error })])
+        )
+      )
+    )
+  );
 
-    this.lastMouseX = event.clientX;
-    this.lastMouseY = event.clientY;
-  }
-
-  getImageStyle() {
-    return {
-      transform: `translate(${this.translateX}px, ${this.translateY}px) scale(${this.scale})`,
-    };
-  }
+  // Effect to load items after success
+  loadItems$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(loadItems),
+      switchMap(() =>
+        this.itemService.getItems().pipe(
+          map(items => loadItemsSuccess({ items })),
+          catchError(error => [loadItemsFailure({ error })])
+        )
+      )
+    )
+  );
 }
 
+import { createReducer, on } from '@ngrx/store';
+import { addItemSuccess, addItemFailure, loadItemsSuccess, loadItemsFailure } from './item.actions';
 
-<div class="image-container" #container>
-  <img
-    src="your-image.jpg"
-    alt="Zoomable Image"
-    [ngStyle]="getImageStyle()"
-    (mousedown)="onMouseDown($event)"
-    (mouseup)="onMouseUp()"
-    (mousemove)="onMouseMove($event)"
-    (wheel)="onWheel($event)"
-    #image
-  />
-</div>
+export interface ItemState {
+  items: any[];
+  loading: boolean;
+  error: string | null;
+}
+
+export const initialState: ItemState = {
+  items: [],
+  loading: false,
+  error: null
+};
+
+export const itemReducer = createReducer(
+  initialState,
+  on(addItemSuccess, (state, { item }) => ({
+    ...state,
+    items: [...state.items, item],
+    loading: false,
+    error: null
+  })),
+  on(addItemFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
+  })),
+  on(loadItemsSuccess, (state, { items }) => ({
+    ...state,
+    items,
+    loading: false,
+    error: null
+  })),
+  on(loadItemsFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
+  }))
+);
+
+addItem(item: any) {
+    this.store.dispatch(addItem({ item }));
+  }
