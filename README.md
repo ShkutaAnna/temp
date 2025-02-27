@@ -97,3 +97,10 @@ export class ImageZoomPanComponent {
     this.translateY = Math.max(minY, Math.min(this.translateY, maxY));
   }
 }
+
+
+<div #container class="container">
+  <img #image class="zoomable-image"
+       [style.transform]="'translate(' + translateX + 'px, ' + translateY + 'px) scale(' + scale + ')'"
+       (mousedown)="onMouseDown($event)" />
+</div>
