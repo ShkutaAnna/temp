@@ -1,22 +1,96 @@
 # temp
 
 ```javascript
-function getBounds(container: HTMLElement, img: HTMLElement, scale: number) {
-    const containerRect = container.getBoundingClientRect();
-    const imgWidth = img.naturalWidth * scale;
-    const imgHeight = img.naturalHeight * scale;
+import { Component, ElementRef, HostListener, ViewChild } from '@angular/core';
 
-    const minX = Math.min(0, (containerRect.width - imgWidth) / 2);
-    const maxX = Math.max(0, (imgWidth - containerRect.width) / 2);
-    const minY = Math.min(0, (containerRect.height - imgHeight) / 2);
-    const maxY = Math.max(0, (imgHeight - containerRect.height) / 2);
+@Component({
+  selector: 'app-zoom-drag',
+  template: `
+    <div #container class="image-container">
+      <img #image src="https://source.unsplash.com/random/800x600"
+           class="zoom-image"
+           (mousedown)="startDrag($event)"
+           (mousemove)="onDrag($event)"
+           (mouseup)="endDrag()"
+           (mouseleave)="endDrag()"/>
+    </div>
+  `,
+  styleUrls: ['./zoom-drag.component.scss']
+})
+export class ZoomDragComponent {
+  @ViewChild('image') image!: ElementRef<HTMLImageElement>;
+  @ViewChild('container') container!: ElementRef<HTMLDivElement>;
 
-    return { minX, maxX, minY, maxY };
-}
+  scale = 1;
+  minScale = 1;
+  maxScale = 3;
+  translateX = 0;
+  translateY = 0;
+  dragging = false;
+  startX = 0;
+  startY = 0;
 
-function updatePosition(newX: number, newY: number, bounds: any) {
-    const clampedX = Math.max(bounds.minX, Math.min(bounds.maxX, newX));
-    const clampedY = Math.max(bounds.minY, Math.min(bounds.maxY, newY));
+  @HostListener('wheel', ['$event'])
+  onScroll(event: WheelEvent) {
+    event.preventDefault();
 
-    return { x: clampedX, y: clampedY };
+    const zoomFactor = 0.1;
+    const newScale = event.deltaY < 0 ? this.scale + zoomFactor : this.scale - zoomFactor;
+    const boundedScale = Math.max(this.minScale, Math.min(this.maxScale, newScale));
+
+    if (boundedScale !== this.scale) {
+      this.adjustZoom(event, boundedScale);
+    }
+  }
+
+  startDrag(event: MouseEvent) {
+    if (this.scale > this.minScale) {
+      this.dragging = true;
+      this.startX = event.clientX - this.translateX;
+      this.startY = event.clientY - this.translateY;
+    }
+  }
+
+  onDrag(event: MouseEvent) {
+    if (!this.dragging) return;
+
+    const img = this.image.nativeElement;
+    const container = this.container.nativeElement;
+
+    const maxX = (img.width * this.scale - container.clientWidth) / 2;
+    const maxY = (img.height * this.scale - container.clientHeight) / 2;
+
+    this.translateX = Math.min(maxX, Math.max(-maxX, event.clientX - this.startX));
+    this.translateY = Math.min(maxY, Math.max(-maxY, event.clientY - this.startY));
+
+    this.applyTransform();
+  }
+
+  endDrag() {
+    this.dragging = false;
+  }
+
+  private adjustZoom(event: WheelEvent, newScale: number) {
+    const img = this.image.nativeElement;
+    const container = this.container.nativeElement;
+    
+    const rect = img.getBoundingClientRect();
+    const offsetX = event.clientX - rect.left;
+    const offsetY = event.clientY - rect.top;
+
+    const percentX = offsetX / rect.width;
+    const percentY = offsetY / rect.height;
+
+    const deltaScale = newScale / this.scale;
+
+    this.translateX = (this.translateX - (percentX - 0.5) * rect.width) * deltaScale;
+    this.translateY = (this.translateY - (percentY - 0.5) * rect.height) * deltaScale;
+    this.scale = newScale;
+
+    this.applyTransform();
+  }
+
+  private applyTransform() {
+    this.image.nativeElement.style.transform = `scale(${this.scale}) translate(${this.translateX}px, ${this.translateY}px)`;
+  }
 }
