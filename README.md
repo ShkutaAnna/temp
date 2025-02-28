@@ -1,18 +1,18 @@
 # temp
 
 ```javascript
-import { Component, ElementRef, HostListener, ViewChild } from '@angular/core';
+import { Component, ElementRef, ViewChild, HostListener } from '@angular/core';
 
 @Component({
   selector: 'app-zoom-drag',
   template: `
-    <div #container class="image-container">
+    <div #container class="image-container"
+         (mousedown)="startDrag($event)"
+         (mouseup)="endDrag()"
+         (mouseleave)="endDrag()"
+         (mousemove)="onDrag($event)">
       <img #image src="https://source.unsplash.com/random/800x600"
-           class="zoom-image"
-           (mousedown)="startDrag($event)"
-           (mousemove)="onDrag($event)"
-           (mouseup)="endDrag()"
-           (mouseleave)="endDrag()"/>
+           class="zoom-image"/>
     </div>
   `,
   styleUrls: ['./zoom-drag.component.scss']
@@ -29,11 +29,13 @@ export class ZoomDragComponent {
   dragging = false;
   startX = 0;
   startY = 0;
+  lastTranslateX = 0;
+  lastTranslateY = 0;
 
   @HostListener('wheel', ['$event'])
   onScroll(event: WheelEvent) {
     event.preventDefault();
-
+    
     const zoomFactor = 0.1;
     const newScale = event.deltaY < 0 ? this.scale + zoomFactor : this.scale - zoomFactor;
     const boundedScale = Math.max(this.minScale, Math.min(this.maxScale, newScale));
@@ -46,35 +48,34 @@ export class ZoomDragComponent {
   startDrag(event: MouseEvent) {
     if (this.scale > this.minScale) {
       this.dragging = true;
-      this.startX = event.clientX - this.translateX;
-      this.startY = event.clientY - this.translateY;
+      this.startX = event.clientX;
+      this.startY = event.clientY;
     }
   }
 
   onDrag(event: MouseEvent) {
     if (!this.dragging) return;
 
-    const img = this.image.nativeElement;
-    const container = this.container.nativeElement;
+    const deltaX = event.clientX - this.startX;
+    const deltaY = event.clientY - this.startY;
 
-    const maxX = (img.width * this.scale - container.clientWidth) / 2;
-    const maxY = (img.height * this.scale - container.clientHeight) / 2;
+    this.translateX = this.lastTranslateX + deltaX;
+    this.translateY = this.lastTranslateY + deltaY;
 
-    this.translateX = Math.min(maxX, Math.max(-maxX, event.clientX - this.startX));
-    this.translateY = Math.min(maxY, Math.max(-maxY, event.clientY - this.startY));
-
+    this.constrainImagePosition();
     this.applyTransform();
   }
 
   endDrag() {
     this.dragging = false;
+    this.lastTranslateX = this.translateX;
+    this.lastTranslateY = this.translateY;
   }
 
   private adjustZoom(event: WheelEvent, newScale: number) {
     const img = this.image.nativeElement;
-    const container = this.container.nativeElement;
-
     const rect = img.getBoundingClientRect();
+
     const offsetX = event.clientX - rect.left;
     const offsetY = event.clientY - rect.top;
 
@@ -88,7 +89,6 @@ export class ZoomDragComponent {
 
     this.scale = newScale;
     this.constrainImagePosition();
-
     this.applyTransform();
   }
 
