@@ -6,13 +6,13 @@ import { Component, ElementRef, ViewChild, HostListener } from '@angular/core';
 @Component({
   selector: 'app-zoom-drag',
   template: `
-    <div #container class="image-container"
-         (mousedown)="startDrag($event)"
-         (mouseup)="endDrag()"
-         (mouseleave)="endDrag()"
-         (mousemove)="onDrag($event)">
+    <div #container class="image-container">
       <img #image src="https://source.unsplash.com/random/800x600"
-           class="zoom-image"/>
+           class="zoom-image"
+           (mousedown)="startDrag($event)"
+           (mousemove)="onDrag($event)"
+           (mouseup)="endDrag()"
+           (mouseleave)="endDrag()"/>
     </div>
   `,
   styleUrls: ['./zoom-drag.component.scss']
@@ -94,16 +94,4 @@ export class ZoomDragComponent {
 
   private constrainImagePosition() {
     const img = this.image.nativeElement;
-    const container = this.container.nativeElement;
-
-    const maxX = Math.max(0, (img.width * this.scale - container.clientWidth) / 2);
-    const maxY = Math.max(0, (img.height * this.scale - container.clientHeight) / 2);
-
-    this.translateX = Math.min(maxX, Math.max(-maxX, this.translateX));
-    this.translateY = Math.min(maxY, Math.max(-maxY, this.translateY));
-  }
-
-  private applyTransform() {
-    this.image.nativeElement.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.scale})`;
-  }
-}
+    const container = this.container.nativeElement
