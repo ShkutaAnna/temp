@@ -73,7 +73,7 @@ export class ZoomDragComponent {
   private adjustZoom(event: WheelEvent, newScale: number) {
     const img = this.image.nativeElement;
     const container = this.container.nativeElement;
-    
+
     const rect = img.getBoundingClientRect();
     const offsetX = event.clientX - rect.left;
     const offsetY = event.clientY - rect.top;
@@ -85,12 +85,25 @@ export class ZoomDragComponent {
 
     this.translateX = (this.translateX - (percentX - 0.5) * rect.width) * deltaScale;
     this.translateY = (this.translateY - (percentY - 0.5) * rect.height) * deltaScale;
+
     this.scale = newScale;
+    this.constrainImagePosition();
 
     this.applyTransform();
   }
 
+  private constrainImagePosition() {
+    const img = this.image.nativeElement;
+    const container = this.container.nativeElement;
+
+    const maxX = Math.max(0, (img.width * this.scale - container.clientWidth) / 2);
+    const maxY = Math.max(0, (img.height * this.scale - container.clientHeight) / 2);
+
+    this.translateX = Math.min(maxX, Math.max(-maxX, this.translateX));
+    this.translateY = Math.min(maxY, Math.max(-maxY, this.translateY));
+  }
+
   private applyTransform() {
-    this.image.nativeElement.style.transform = `scale(${this.scale}) translate(${this.translateX}px, ${this.translateY}px)`;
+    this.image.nativeElement.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.scale})`;
   }
 }
