@@ -94,4 +94,16 @@ export class ZoomDragComponent {
 
   private constrainImagePosition() {
     const img = this.image.nativeElement;
-    const container = this.container.nativeElement
+    const container = this.container.nativeElement;
+
+    const maxX = Math.max(0, (img.width * this.scale - container.clientWidth) / 2);
+    const maxY = Math.max(0, (img.height * this.scale - container.clientHeight) / 2);
+
+    this.translateX = Math.min(maxX, Math.max(-maxX, this.translateX));
+    this.translateY = Math.min(maxY, Math.max(-maxY, this.translateY));
+  }
+
+  private applyTransform() {
+    this.image.nativeElement.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.scale})`;
+  }
+}
