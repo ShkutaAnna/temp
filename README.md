@@ -1,7 +1,18 @@
 # temp
 
 ```javascript
-@HostListener('wheel', ['$event'])
+scale = 1;
+  minScale = 1;
+  maxScale = 3;
+  translateX = 0;
+  translateY = 0;
+  isDragging = false;
+  startX = 0;
+  startY = 0;
+  initialTranslateX = 0;
+  initialTranslateY = 0;
+
+  @HostListener('wheel', ['$event'])
   onScroll(event: WheelEvent) {
     event.preventDefault();
 
@@ -14,6 +25,32 @@
     if (boundedScale !== this.scale) {
       this.adjustZoom(event, boundedScale);
     }
+  }
+
+  onMouseDown(event: MouseEvent) {
+    this.isDragging = true;
+    this.startX = event.clientX;
+    this.startY = event.clientY;
+    this.initialTranslateX = this.translateX;
+    this.initialTranslateY = this.translateY;
+  }
+
+  onMouseMove(event: MouseEvent) {
+    if (this.isDragging) {
+      const dx = event.clientX - this.startX;
+      const dy = event.clientY - this.startY;
+
+      // Update translateX and translateY based on mouse movement
+      this.translateX = this.initialTranslateX + dx;
+      this.translateY = this.initialTranslateY + dy;
+
+      // Apply the transform to move the image
+      this.applyTransform();
+    }
+  }
+
+  onMouseUp() {
+    this.isDragging = false;
   }
 
   private adjustZoom(event: WheelEvent, newScale: number) {
@@ -35,7 +72,6 @@
     this.translateX = (this.translateX - (percentX - 0.5) * rect.width) * deltaScale;
     this.translateY = (this.translateY - (percentY - 0.5) * rect.height) * deltaScale;
 
-    // Set the new scale and apply transformations
     this.scale = newScale;
     this.applyTransform();
   }
@@ -53,9 +89,5 @@
     this.translateY = Math.min(maxY, Math.max(-maxY, this.translateY));
 
     // Apply the final transform
-    this.image.nativeElement.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.scale})`;
-  }
-
-  private applyTransform() {
     this.image.nativeElement.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.scale})`;
   }
