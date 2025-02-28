@@ -12,6 +12,15 @@ import { Component, ElementRef, ViewChild, HostListener } from '@angular/core';
   `,
   styleUrls: ['./zoom.component.scss']
 })
+@Component({
+  selector: 'app-zoom',
+  template: `
+    <div #container class="image-container">
+      <img #image src="https://source.unsplash.com/random/800x600" class="zoom-image" />
+    </div>
+  `,
+  styleUrls: ['./zoom.component.scss']
+})
 export class ZoomComponent {
   @ViewChild('image') image!: ElementRef<HTMLImageElement>;
   @ViewChild('container') container!: ElementRef<HTMLDivElement>;
