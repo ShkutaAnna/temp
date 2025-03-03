@@ -1,21 +1,28 @@
 # temp
 
 ```javascript
-getCurrentMonthDays(): { day: number, dayOfWeek: string }[] {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth(); // 0-based index
+function flattenObject(obj: any): any {
+  const result: any = {};
 
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const daysArray = [];
-
-  for (let day = 1; day <= daysInMonth; day++) {
-    const date = new Date(year, month, day);
-    daysArray.push({
-      day,
-      dayOfWeek: date.toLocaleDateString('en-US', { weekday: 'long' }) // Change locale if needed
-    });
+  for (const key in obj) {
+    if (Array.isArray(obj[key])) {
+      obj[key].forEach((item, index) => {
+        if (typeof item === 'object' && item !== null) {
+          for (const subKey in item) {
+            result[`${subKey}_${index}`] = item[subKey];
+          }
+        }
+      });
+    } else {
+      result[key] = obj[key];
+    }
   }
 
-  return daysArray;
+  return result;
 }
+
+// Example Usage:
+const input = { prop1: 'a', prop2: 'b', prop3: [{ a: 1 }, { a: 2 }] };
+const output = flattenObject(input);
+
+console.log(output);
